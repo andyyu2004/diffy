@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["diffy"] = [{"text":"impl&lt;'a, T:&nbsp;ToOwned + ?Sized&gt; StructuralPartialEq for Patch&lt;'a, T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'a, T:&nbsp;?Sized&gt; StructuralPartialEq for Hunk&lt;'a, T&gt;","synthetic":false,"types":[]},{"text":"impl StructuralPartialEq for HunkRange","synthetic":false,"types":[]},{"text":"impl&lt;'a, T:&nbsp;?Sized&gt; StructuralPartialEq for Line&lt;'a, T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

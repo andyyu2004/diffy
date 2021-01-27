@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["diffy"] = [{"text":"impl&lt;'a, T:&nbsp;PartialEq + ToOwned + ?Sized&gt; PartialEq&lt;Patch&lt;'a, T&gt;&gt; for Patch&lt;'a, T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;'a, T:&nbsp;PartialEq + ?Sized&gt; PartialEq&lt;Hunk&lt;'a, T&gt;&gt; for Hunk&lt;'a, T&gt;","synthetic":false,"types":[]},{"text":"impl PartialEq&lt;HunkRange&gt; for HunkRange","synthetic":false,"types":[]},{"text":"impl&lt;'a, T:&nbsp;PartialEq + ?Sized&gt; PartialEq&lt;Line&lt;'a, T&gt;&gt; for Line&lt;'a, T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

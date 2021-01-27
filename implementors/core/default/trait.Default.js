@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["diffy"] = [{"text":"impl Default for DiffOptions","synthetic":false,"types":[]},{"text":"impl Default for MergeOptions","synthetic":false,"types":[]},{"text":"impl Default for PatchFormatter","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

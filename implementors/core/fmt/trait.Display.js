@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["diffy"] = [{"text":"impl Display for ApplyError","synthetic":false,"types":[]},{"text":"impl Display for ParsePatchError","synthetic":false,"types":[]},{"text":"impl&lt;'_&gt; Display for Patch&lt;'_, str&gt;","synthetic":false,"types":[]},{"text":"impl Display for HunkRange","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

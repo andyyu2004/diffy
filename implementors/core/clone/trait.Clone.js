@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["diffy"] = [{"text":"impl Clone for ConflictStyle","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;ToOwned + ?Sized, '_&gt; Clone for Patch&lt;'_, T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;?Sized, '_&gt; Clone for Hunk&lt;'_, T&gt;","synthetic":false,"types":[]},{"text":"impl Clone for HunkRange","synthetic":false,"types":[]},{"text":"impl&lt;T:&nbsp;?Sized, '_&gt; Clone for Line&lt;'_, T&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
