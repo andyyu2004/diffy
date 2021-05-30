@@ -34,6 +34,26 @@ impl<'a, T: ToOwned + ?Sized> Patch<'a, T> {
         Self { original, modified, hunks }
     }
 
+    /// Return the name of the old file
+    pub fn original(&self) -> Option<&T> {
+        self.original.as_ref().map(AsRef::as_ref)
+    }
+
+    /// Return the name of the new file
+    pub fn modified(&self) -> Option<&T> {
+        self.modified.as_ref().map(AsRef::as_ref)
+    }
+
+    /// Set the name of the old file
+    pub fn set_original(&mut self, original: Cow<'a, T>) {
+        self.original = Some(Filename::new(original));
+    }
+
+    /// Set the name of the new file
+    pub fn set_modified(&mut self, modified: Cow<'a, T>) {
+        self.modified = Some(Filename::new(modified));
+    }
+
     /// Returns the hunks in the patch
     pub fn hunks(&self) -> &[Hunk<'_, T>] {
         &self.hunks
