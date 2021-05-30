@@ -14,8 +14,8 @@ pub struct Patch<'a, T: ToOwned + ?Sized> {
     // TODO GNU patch is able to parse patches without filename headers.
     // This should be changed to an `Option` type to reflect this instead of setting this to ""
     // when they're missing
-    original: Option<Filename<'a, T>>,
-    modified: Option<Filename<'a, T>>,
+    pub original: Option<Filename<'a, T>>,
+    pub modified: Option<Filename<'a, T>>,
     hunks: Vec<Hunk<'a, T>>,
 }
 
@@ -32,26 +32,6 @@ impl<'a, T: ToOwned + ?Sized> Patch<'a, T> {
         let original = original.map(|o| Filename(o.into()));
         let modified = modified.map(|m| Filename(m.into()));
         Self { original, modified, hunks }
-    }
-
-    /// Return the name of the old file
-    pub fn original(&self) -> Option<&T> {
-        self.original.as_ref().map(AsRef::as_ref)
-    }
-
-    /// Return the name of the new file
-    pub fn modified(&self) -> Option<&T> {
-        self.modified.as_ref().map(AsRef::as_ref)
-    }
-
-    /// Set the name of the old file
-    pub fn set_original(&mut self, original: Cow<'a, T>) {
-        self.original = Some(Filename::new(original));
-    }
-
-    /// Set the name of the new file
-    pub fn set_modified(&mut self, modified: Cow<'a, T>) {
-        self.modified = Some(Filename::new(modified));
     }
 
     /// Returns the hunks in the patch
