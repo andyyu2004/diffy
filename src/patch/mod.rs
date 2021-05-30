@@ -31,11 +31,7 @@ impl<'a, T: ToOwned + ?Sized> Patch<'a, T> {
     {
         let original = original.map(|o| Filename(o.into()));
         let modified = modified.map(|m| Filename(m.into()));
-        Self {
-            original,
-            modified,
-            hunks,
-        }
+        Self { original, modified, hunks }
     }
 
     /// Return the name of the old file
@@ -46,6 +42,16 @@ impl<'a, T: ToOwned + ?Sized> Patch<'a, T> {
     /// Return the name of the new file
     pub fn modified(&self) -> Option<&T> {
         self.modified.as_ref().map(AsRef::as_ref)
+    }
+
+    /// Set the name of the old file
+    pub fn set_original(&mut self, original: Cow<'a, T>) {
+        self.original = Some(Filename::new(original));
+    }
+
+    /// Set the name of the new file
+    pub fn set_modified(&mut self, modified: Cow<'a, T>) {
+        self.modified = Some(Filename::new(modified));
     }
 
     /// Returns the hunks in the patch
@@ -61,9 +67,7 @@ impl<T: AsRef<[u8]> + ToOwned + ?Sized> Patch<'_, T> {
     /// potentially non-utf8 patches.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        PatchFormatter::new()
-            .write_patch_into(self, &mut bytes)
-            .unwrap();
+        PatchFormatter::new().write_patch_into(self, &mut bytes).unwrap();
         bytes
     }
 }
@@ -132,7 +136,13 @@ where
 }
 
 #[derive(PartialEq, Eq)]
-struct Filename<'a, T: ToOwned + ?Sized>(Cow<'a, T>);
+pub struct Filename<'a, T: ToOwned + ?Sized>(Cow<'a, T>);
+
+impl<'a, T: ToOwned + ?Sized> Filename<'a, T> {
+    pub fn new(filename: Cow<'a, T>) -> Self {
+        Self(filename)
+    }
+}
 
 const ESCAPED_CHARS: &[char] = &['\n', '\t', '\0', '\r', '\"', '\\'];
 const ESCAPED_CHARS_BYTES: &[u8] = &[b'\n', b'\t', b'\0', b'\r', b'\"', b'\\'];
@@ -145,11 +155,7 @@ impl Filename<'_, str> {
 
 impl<T: ToOwned + AsRef<[u8]> + ?Sized> Filename<'_, T> {
     fn needs_to_be_escaped_bytes(&self) -> bool {
-        self.0
-            .as_ref()
-            .as_ref()
-            .iter()
-            .any(|b| ESCAPED_CHARS_BYTES.contains(b))
+        self.0.as_ref().as_ref().iter().any(|b| ESCAPED_CHARS_BYTES.contains(b))
     }
 
     fn write_into<W: std::io::Write>(&self, mut w: W) -> std::io::Result<()> {
@@ -251,12 +257,7 @@ impl<'a, T: ?Sized> Hunk<'a, T> {
         assert_eq!(old_range.len, old_count);
         assert_eq!(new_range.len, new_count);
 
-        Self {
-            old_range,
-            new_range,
-            function_context,
-            lines,
-        }
+        Self { old_range, new_range, function_context, lines }
     }
 
     /// Returns the corresponding range for the old file in the hunk
@@ -355,7 +356,8 @@ pub enum Line<'a, T: ?Sized> {
     Insert(&'a T),
 }
 
-impl<T: ?Sized> Copy for Line<'_, T> {}
+impl<T: ?Sized> Copy for Line<'_, T> {
+}
 
 impl<T: ?Sized> Clone for Line<'_, T> {
     fn clone(&self) -> Self {
