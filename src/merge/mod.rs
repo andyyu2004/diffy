@@ -1,7 +1,5 @@
 use crate::{
-    diff::DiffOptions,
-    range::{DiffRange, Range, SliceLike},
-    utils::Classifier,
+    diff::DiffOptions, range::{DiffRange, Range, SliceLike}, utils::Classifier
 };
 use std::{cmp, fmt};
 
@@ -36,7 +34,8 @@ impl<T: ?Sized + fmt::Debug + SliceLike> fmt::Debug for Diff3Range<'_, '_, '_, T
     }
 }
 
-impl<T: ?Sized> Copy for Diff3Range<'_, '_, '_, T> {}
+impl<T: ?Sized> Copy for Diff3Range<'_, '_, '_, T> {
+}
 
 impl<T: ?Sized> Clone for Diff3Range<'_, '_, '_, T> {
     fn clone(&self) -> Self {
@@ -65,17 +64,14 @@ impl<T: ?Sized + fmt::Debug + SliceLike> fmt::Debug for MergeRange<'_, '_, '_, T
             ),
             MergeRange::Ours(range) => write!(f, "Ours: {:?}", range.as_slice()),
             MergeRange::Theirs(range) => write!(f, "Theirs: {:?}", range.as_slice()),
-            MergeRange::Both(ours, theirs) => write!(
-                f,
-                "Both: ours: {:?} theirs: {:?}",
-                ours.as_slice(),
-                theirs.as_slice()
-            ),
+            MergeRange::Both(ours, theirs) =>
+                write!(f, "Both: ours: {:?} theirs: {:?}", ours.as_slice(), theirs.as_slice()),
         }
     }
 }
 
-impl<T: ?Sized> Copy for MergeRange<'_, '_, '_, T> {}
+impl<T: ?Sized> Copy for MergeRange<'_, '_, '_, T> {
+}
 
 impl<T: ?Sized> Clone for MergeRange<'_, '_, '_, T> {
     fn clone(&self) -> Self {
@@ -117,6 +113,8 @@ pub enum ConflictStyle {
 pub struct MergeOptions {
     conflict_marker_length: usize,
     style: ConflictStyle,
+    ours_marker: String,
+    theirs_marker: String,
 }
 
 impl MergeOptions {
@@ -125,10 +123,14 @@ impl MergeOptions {
     /// ## Defaults
     /// * conflict_marker_length = 7
     /// * style = ConflictStyle::Diff3
+    /// * ours_marker = "ours"
+    /// * theirs_marker = "theirs"
     pub fn new() -> Self {
         Self {
             conflict_marker_length: DEFAULT_CONFLICT_MARKER_LENGTH,
             style: ConflictStyle::Diff3,
+            ours_marker: "ours".to_owned(),
+            theirs_marker: "theirs".to_owned(),
         }
     }
 
@@ -141,6 +143,16 @@ impl MergeOptions {
     /// Set the conflict style used when displaying a merge conflict
     pub fn set_conflict_style(&mut self, style: ConflictStyle) -> &mut Self {
         self.style = style;
+        self
+    }
+
+    pub fn set_ours_marker(&mut self, ours_marker: String) -> &mut Self {
+        self.ours_marker = ours_marker;
+        self
+    }
+
+    pub fn set_theirs_marker(&mut self, theirs_marker: String) -> &mut Self {
+        self.theirs_marker = theirs_marker;
         self
     }
 
@@ -165,7 +177,7 @@ impl MergeOptions {
 
         cleanup_conflicts(&mut merge);
 
-        output_result(
+        self.output_result(
             &ancestor_lines,
             &our_lines,
             &their_lines,
@@ -173,6 +185,52 @@ impl MergeOptions {
             self.conflict_marker_length,
             self.style,
         )
+    }
+
+    fn output_result<'a, T: ?Sized>(
+        &self,
+        ancestor: &[&'a str],
+        ours: &[&'a str],
+        theirs: &[&'a str],
+        merge: &[MergeRange<T>],
+        marker_len: usize,
+        style: ConflictStyle,
+    ) -> Result<String, String> {
+        let mut conflicts = 0;
+        let mut output = String::new();
+
+        for merge_range in merge {
+            match merge_range {
+                MergeRange::Equal(range, ..) => {
+                    output.extend(ancestor[range.range()].iter().copied());
+                }
+                MergeRange::Conflict(ancestor_range, ours_range, theirs_range) => {
+                    add_conflict_marker(&mut output, '<', marker_len, Some(&self.ours_marker));
+                    output.extend(ours[ours_range.range()].iter().copied());
+
+                    if let ConflictStyle::Diff3 = style {
+                        add_conflict_marker(&mut output, '|', marker_len, Some("original"));
+                        output.extend(ancestor[ancestor_range.range()].iter().copied());
+                    }
+
+                    add_conflict_marker(&mut output, '=', marker_len, None);
+                    output.extend(theirs[theirs_range.range()].iter().copied());
+                    add_conflict_marker(&mut output, '>', marker_len, Some(&self.theirs_marker));
+                    conflicts += 1;
+                }
+                MergeRange::Ours(range) => {
+                    output.extend(ours[range.range()].iter().copied());
+                }
+                MergeRange::Theirs(range) => {
+                    output.extend(theirs[range.range()].iter().copied());
+                }
+                MergeRange::Both(range, _) => {
+                    output.extend(ours[range.range()].iter().copied());
+                }
+            }
+        }
+
+        if conflicts != 0 { Err(output) } else { Ok(output) }
     }
 
     /// Perform a 3-way merge between potentially non-utf8 texts
@@ -444,12 +502,10 @@ fn create_merge_range<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike>(
     theirs: Option<Range<'theirs, T>>,
 ) -> Option<MergeRange<'ancestor, 'ours, 'theirs, T>> {
     match (ancestor, ours, theirs) {
-        (Some(ancestor), Some(ours), Some(theirs)) => {
-            Some(MergeRange::Conflict(ancestor, ours, theirs))
-        }
-        (None, Some(ours), Some(theirs)) => {
-            Some(MergeRange::Conflict(Range::empty(), ours, theirs))
-        }
+        (Some(ancestor), Some(ours), Some(theirs)) =>
+            Some(MergeRange::Conflict(ancestor, ours, theirs)),
+        (None, Some(ours), Some(theirs)) =>
+            Some(MergeRange::Conflict(Range::empty(), ours, theirs)),
         (None, Some(ours), None) => Some(MergeRange::Ours(ours)),
         (None, None, Some(theirs)) => Some(MergeRange::Theirs(theirs)),
 
@@ -485,55 +541,6 @@ fn cleanup_conflicts<'ancestor, 'ours, 'theirs, T: ?Sized + SliceLike + PartialE
     }
 }
 
-fn output_result<'a, T: ?Sized>(
-    ancestor: &[&'a str],
-    ours: &[&'a str],
-    theirs: &[&'a str],
-    merge: &[MergeRange<T>],
-    marker_len: usize,
-    style: ConflictStyle,
-) -> Result<String, String> {
-    let mut conflicts = 0;
-    let mut output = String::new();
-
-    for merge_range in merge {
-        match merge_range {
-            MergeRange::Equal(range, ..) => {
-                output.extend(ancestor[range.range()].iter().copied());
-            }
-            MergeRange::Conflict(ancestor_range, ours_range, theirs_range) => {
-                add_conflict_marker(&mut output, '<', marker_len, Some("ours"));
-                output.extend(ours[ours_range.range()].iter().copied());
-
-                if let ConflictStyle::Diff3 = style {
-                    add_conflict_marker(&mut output, '|', marker_len, Some("original"));
-                    output.extend(ancestor[ancestor_range.range()].iter().copied());
-                }
-
-                add_conflict_marker(&mut output, '=', marker_len, None);
-                output.extend(theirs[theirs_range.range()].iter().copied());
-                add_conflict_marker(&mut output, '>', marker_len, Some("theirs"));
-                conflicts += 1;
-            }
-            MergeRange::Ours(range) => {
-                output.extend(ours[range.range()].iter().copied());
-            }
-            MergeRange::Theirs(range) => {
-                output.extend(theirs[range.range()].iter().copied());
-            }
-            MergeRange::Both(range, _) => {
-                output.extend(ours[range.range()].iter().copied());
-            }
-        }
-    }
-
-    if conflicts != 0 {
-        Err(output)
-    } else {
-        Ok(output)
-    }
-}
-
 fn add_conflict_marker(
     output: &mut String,
     marker: char,
@@ -565,15 +572,11 @@ fn output_result_bytes<'a, T: ?Sized>(
     for merge_range in merge {
         match merge_range {
             MergeRange::Equal(range, ..) => {
-                ancestor[range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                ancestor[range.range()].iter().for_each(|line| output.extend_from_slice(line));
             }
             MergeRange::Conflict(ancestor_range, ours_range, theirs_range) => {
                 add_conflict_marker_bytes(&mut output, b'<', marker_len, Some(b"ours"));
-                ours[ours_range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                ours[ours_range.range()].iter().for_each(|line| output.extend_from_slice(line));
 
                 if let ConflictStyle::Diff3 = style {
                     add_conflict_marker_bytes(&mut output, b'|', marker_len, Some(b"original"));
@@ -583,35 +586,23 @@ fn output_result_bytes<'a, T: ?Sized>(
                 }
 
                 add_conflict_marker_bytes(&mut output, b'=', marker_len, None);
-                theirs[theirs_range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                theirs[theirs_range.range()].iter().for_each(|line| output.extend_from_slice(line));
                 add_conflict_marker_bytes(&mut output, b'>', marker_len, Some(b"theirs"));
                 conflicts += 1;
             }
             MergeRange::Ours(range) => {
-                ours[range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                ours[range.range()].iter().for_each(|line| output.extend_from_slice(line));
             }
             MergeRange::Theirs(range) => {
-                theirs[range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                theirs[range.range()].iter().for_each(|line| output.extend_from_slice(line));
             }
             MergeRange::Both(range, _) => {
-                ours[range.range()]
-                    .iter()
-                    .for_each(|line| output.extend_from_slice(line));
+                ours[range.range()].iter().for_each(|line| output.extend_from_slice(line));
             }
         }
     }
 
-    if conflicts != 0 {
-        Err(output)
-    } else {
-        Ok(output)
-    }
+    if conflicts != 0 { Err(output) } else { Ok(output) }
 }
 
 fn add_conflict_marker_bytes(
